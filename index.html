@@ -1,0 +1,350 @@
+<title>受験ドリル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column like a ruled study notebook; red-pen marks grade every answer. */
+:root {
+  --paper: #f6f7f9;
+  --sheet: #ffffff;
+  --ink: #1d2433;
+  --ink-soft: #5d6578;
+  --rule: #dfe3ea;
+  --indigo: #2f4a8a;
+  --indigo-wash: #e8edf7;
+  --redpen: #d43a2f;
+  --redpen-wash: #fbe9e7;
+  --ok: #1f7a4d;
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12151c; --sheet: #1a1f29; --ink: #e8ebf2; --ink-soft: #9aa2b4; --rule: #2b3240;
+    --indigo: #8fa8e6; --indigo-wash: #222b40; --redpen: #ff7a6b; --redpen-wash: #3a2220; --ok: #5cc795;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12151c; --sheet: #1a1f29; --ink: #e8ebf2; --ink-soft: #9aa2b4; --rule: #2b3240;
+  --indigo: #8fa8e6; --indigo-wash: #222b40; --redpen: #ff7a6b; --redpen-wash: #3a2220; --ok: #5cc795;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; padding: 0 16px; }
+.app { max-width: 560px; margin: 0 auto; padding-block: 20px 48px; display: flex; flex-direction: column; gap: 20px; }
+button { font-family: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+h1, h2 { font-family: var(--display); margin: 0; text-wrap: balance; }
+.label { font-size: 12px; letter-spacing: .08em; color: var(--ink-soft); font-weight: 500; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* countdown */
+.count { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: end; }
+.count h1 { font-size: 15px; font-weight: 600; grid-column: 1 / -1; }
+.days { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1; color: var(--redpen); }
+.days small { font-size: 18px; color: var(--ink); margin-left: 4px; font-weight: 600; }
+.count .meta { text-align: right; font-size: 13px; color: var(--ink-soft); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--indigo); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+.editor { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.editor input { font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); min-width: 0; flex: 1 1 140px; }
+
+.today { display: flex; gap: 24px; font-size: 13px; color: var(--ink-soft); padding-inline: 4px; flex-wrap: wrap; }
+.today b { color: var(--ink); font-size: 18px; margin-right: 2px; }
+
+/* subjects */
+.subjects { display: flex; flex-direction: column; gap: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+.subj { padding: 16px 18px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; align-items: center; }
+.subj:first-child { border-top: 0; }
+.subj h2 { font-size: 19px; }
+.subj .desc { font-size: 12px; color: var(--ink-soft); }
+.bar { grid-column: 1 / -1; height: 6px; background: var(--indigo-wash); border-radius: 3px; overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .m { background: var(--indigo); }
+.bar .w { background: var(--redpen); }
+.legend { grid-column: 1 / -1; display: flex; gap: 14px; font-size: 12px; color: var(--ink-soft); flex-wrap: wrap; }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; background: var(--indigo-wash); }
+.legend .lm::before { background: var(--indigo); }
+.legend .lw::before { background: var(--redpen); }
+.actions { display: flex; gap: 8px; }
+.btn { border: 1px solid var(--indigo); background: var(--indigo); color: var(--sheet); border-radius: 4px; padding: 7px 14px; font-weight: 700; font-size: 14px; }
+.btn.ghost { background: transparent; color: var(--indigo); }
+.btn.red { border-color: var(--redpen); color: var(--redpen); background: transparent; }
+.btn:disabled { opacity: .35; cursor: default; }
+
+/* quiz */
+.qhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.progress { height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--indigo); transition: width .25s; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 24px 20px; position: relative; min-height: 140px; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  background-image: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px); background-position: 0 12px; }
+.prompt { font-family: var(--display); font-weight: 800; font-size: 26px; line-height: 1.4; overflow-wrap: anywhere; }
+.prompt.long { font-size: 18px; font-family: var(--body); font-weight: 700; }
+.mark { position: absolute; right: 14px; top: 8px; font-family: var(--display); font-size: 64px; line-height: 1; color: var(--redpen); pointer-events: none; animation: stamp .18s ease-out; }
+@keyframes stamp { from { transform: scale(1.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.choices { display: grid; gap: 8px; }
+.choice { text-align: left; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 13px 14px; font-size: 15px; display: flex; gap: 12px; align-items: baseline; }
+.choice:hover:not(:disabled) { border-color: var(--indigo); }
+.choice .k { font-size: 12px; color: var(--ink-soft); width: 1em; flex: none; }
+.choice.right { border-color: var(--ok); color: var(--ok); font-weight: 700; }
+.choice.wrong { border-color: var(--redpen); background: var(--redpen-wash); color: var(--redpen); }
+.choice:disabled { cursor: default; }
+.note { font-size: 13px; color: var(--ink-soft); }
+
+/* result */
+.score { font-family: var(--display); font-size: 48px; font-weight: 800; color: var(--redpen); line-height: 1; }
+.score small { font-size: 20px; color: var(--ink); }
+.list { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+.row { display: grid; grid-template-columns: 1.5em 1fr; gap: 4px 10px; padding: 10px 14px; border-top: 1px solid var(--rule); font-size: 14px; }
+.row:first-child { border-top: 0; }
+.row .m { font-family: var(--display); color: var(--redpen); font-weight: 800; }
+.row .a { grid-column: 2; color: var(--ink-soft); font-size: 13px; }
+.foot { font-size: 12px; color: var(--ink-soft); text-align: center; }
+@media (prefers-reduced-motion: reduce) { .mark { animation: none; } .progress i { transition: none; } }
+</style>
+
+<div class="app" id="app"></div>
+
+<script>
+// ---------- 問題データ ----------
+const SUBJECTS = [
+  { id: "en", name: "英単語", desc: "共通テスト〜中堅私大レベル", qLabel: "意味は？", data: [
+    ["abandon","捨てる・断念する"],["acquire","獲得する・習得する"],["adequate","十分な・適切な"],["anticipate","予期する"],
+    ["appropriate","適切な"],["assume","想定する・引き受ける"],["consequence","結果・重大さ"],["contribute","貢献する・寄付する"],
+    ["crucial","極めて重要な"],["decline","減少する・断る"],["deliberate","意図的な・慎重な"],["distinguish","区別する"],
+    ["eliminate","取り除く"],["emphasize","強調する"],["enormous","莫大な"],["estimate","見積もる"],
+    ["evident","明らかな"],["exaggerate","誇張する"],["fundamental","基本的な"],["hesitate","ためらう"],
+    ["inevitable","避けられない"],["interpret","解釈する・通訳する"],["maintain","維持する・主張する"],["neglect","無視する・怠る"],
+    ["persuade","説得する"],["precise","正確な"],["reluctant","気が進まない"],["sustain","持続させる"],
+    ["vague","曖昧な"],["abundant","豊富な"],["conceal","隠す"],["compensate","補償する・埋め合わせる"]
+  ]},
+  { id: "ko", name: "古文単語", desc: "頻出の重要古語", qLabel: "意味は？", data: [
+    ["あはれなり","しみじみと趣深い"],["をかし","趣がある・興味深い"],["いみじ","程度がはなはだしい"],["うつくし","かわいらしい"],
+    ["あやし","不思議だ・身分が低い"],["ありがたし","めったにない"],["いとほし","気の毒だ"],["おどろく","はっと気づく・目を覚ます"],
+    ["かなし","いとしい・かわいい"],["ゆかし","見たい・知りたい・心ひかれる"],["めでたし","すばらしい"],["なまめかし","優美だ・若々しい"],
+    ["はづかし","（相手が立派で）気がひける"],["ののしる","大声で騒ぐ・評判になる"],["ながむ","物思いにふける"],["さうざうし","物足りない"],
+    ["つれづれなり","退屈だ・手持ちぶさただ"],["やがて","そのまま・すぐに"],["ゆめ（〜打消）","決して（〜ない）"],["あさまし","驚きあきれる"],
+    ["こころもとなし","じれったい・不安だ"],["ことわり","道理"],["うし","つらい・憂鬱だ"],["としごろ","長年"],
+    ["おぼゆ","思われる・似る"],["すさまじ","興ざめだ"],["ありく","歩き回る・〜してまわる"]
+  ]},
+  { id: "jh", name: "日本史", desc: "年代と用語の一問一答", qLabel: "答えは？", data: [
+    ["645年、中大兄皇子らが蘇我氏を倒した政変","乙巳の変"],["701年に制定された律令","大宝律令"],
+    ["743年、開墾地の永久私有を認めた法","墾田永年私財法"],["794年、桓武天皇が遷都した都","平安京"],
+    ["894年、遣唐使の停止を建議した人物","菅原道真"],["1185年、守護・地頭の設置を朝廷に認めさせた人物","源頼朝"],
+    ["1232年に制定された最初の武家法","御成敗式目"],["1297年、御家人救済のために出された法令","永仁の徳政令"],
+    ["1334年に始まった後醍醐天皇の政治","建武の新政"],["1467年に始まった大乱","応仁の乱"],
+    ["1543年、鉄砲が伝来した島","種子島"],["1582年、織田信長が討たれた事件","本能寺の変"],
+    ["1588年、豊臣秀吉が農民から武器を没収した法令","刀狩令"],["1600年、徳川家康が勝利した戦い","関ヶ原の戦い"],
+    ["1635年、参勤交代を制度化した将軍","徳川家光"],["享保の改革を行った将軍","徳川吉宗"],
+    ["寛政の改革を行った老中","松平定信"],["天保の改革を行った老中","水野忠邦"],
+    ["1854年、ペリーとの間で結ばれた条約","日米和親条約"],["1867年、徳川慶喜が政権を朝廷に返上したこと","大政奉還"],
+    ["1873年、地価の3%を金納させた税制改革","地租改正"],["1889年に発布された憲法","大日本帝国憲法"],
+    ["1894年、領事裁判権の撤廃に成功した外務大臣","陸奥宗光"],["1911年、関税自主権を回復した外務大臣","小村寿太郎"],
+    ["1925年、満25歳以上の男子に選挙権を与えた法","普通選挙法"],["1951年、日本が主権回復のため結んだ講和条約","サンフランシスコ平和条約"]
+  ]},
+  { id: "wh", name: "世界史", desc: "年代と用語の一問一答", qLabel: "答えは？", data: [
+    ["前27年、ローマで元首政を始めた人物","アウグストゥス"],["313年、キリスト教を公認した勅令","ミラノ勅令"],
+    ["622年、ムハンマドのメッカからメディナへの移住","ヒジュラ（聖遷）"],["800年、教皇からローマ皇帝の帝冠を受けたフランク王","カール大帝"],
+    ["1077年、皇帝ハインリヒ4世が教皇に謝罪した事件","カノッサの屈辱"],["1096年に始まった聖地奪回の遠征","十字軍"],
+    ["1206年、モンゴル高原を統一した人物","チンギス＝ハン"],["1215年、イギリス王ジョンに認めさせた文書","大憲章（マグナ＝カルタ）"],
+    ["1453年、ビザンツ帝国を滅ぼした国","オスマン帝国"],["1492年、大西洋を横断しアメリカに到達した人物","コロンブス"],
+    ["1517年、「九十五カ条の論題」を発表した人物","ルター"],["1648年、三十年戦争の講和条約","ウェストファリア条約"],
+    ["1689年、イギリス議会が制定した法","権利の章典"],["1776年、13植民地が発表した宣言","アメリカ独立宣言"],
+    ["1804年、フランス皇帝に即位した人物","ナポレオン"],["1840年、清とイギリスの間で起きた戦争","アヘン戦争"],
+    ["1861年、ロシアで農奴解放令を出した皇帝","アレクサンドル2世"],["1871年、ドイツ帝国の初代宰相","ビスマルク"],
+    ["1911年、清朝を倒した革命","辛亥革命"],["1929年、ニューヨーク株価暴落から始まった不況","世界恐慌"],
+    ["1933年、ニューディール政策を始めたアメリカ大統領","フランクリン＝ローズヴェルト"],["1989年に崩壊した東西ベルリンを隔てる壁","ベルリンの壁"]
+  ]}
+];
+SUBJECTS.forEach(s => { s.items = s.data.map(([q, a], i) => ({ id: s.id + i, q, a })); });
+
+// ---------- 保存 ----------
+const KEY = "juken-drill-v1";
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.items) return d; } catch (e) {}
+  return { exam: { name: "共通テスト", date: "2027-01-16" }, items: {}, days: {} };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+let store = load();
+
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const rec = id => store.items[id] || { n: 0, s: 0, last: null };
+const isMastered = id => rec(id).s >= 3;
+const isWeak = id => rec(id).last === false;
+
+function daysLeft() {
+  const t = new Date(store.exam.date + "T00:00:00"); const now = new Date(); now.setHours(0,0,0,0);
+  return Math.round((t - now) / 86400000);
+}
+function streak() {
+  let n = 0; const d = new Date();
+  if (!store.days[todayKey()]) d.setDate(d.getDate() - 1);
+  while (true) {
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    if (!store.days[k]) return n; n++; d.setDate(d.getDate() - 1);
+  }
+}
+
+// ---------- 出題 ----------
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function pickQuestions(subj, mode) {
+  let pool = subj.items;
+  if (mode === "weak") return shuffle(pool.filter(it => isWeak(it.id))).slice(0, 10);
+  // 苦手 → 未出題 → 未定着 → 定着済み の順に優先
+  const rank = it => isWeak(it.id) ? 0 : rec(it.id).n === 0 ? 1 : !isMastered(it.id) ? 2 : 3;
+  return shuffle(pool).sort((a, b) => rank(a) - rank(b)).slice(0, 10);
+}
+function choicesFor(subj, item) {
+  const others = shuffle([...new Set(subj.items.filter(it => it.a !== item.a).map(it => it.a))]).slice(0, 3);
+  return shuffle([item.a, ...others]);
+}
+
+// ---------- 画面 ----------
+const app = document.getElementById("app");
+let view = { name: "home" };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function render() {
+  if (view.name === "home") renderHome();
+  else if (view.name === "quiz") renderQuiz();
+  else renderResult();
+  window.scrollTo(0, 0);
+}
+
+function renderHome() {
+  const left = daysLeft();
+  const todayN = store.days[todayKey()] || 0;
+  const examDate = new Date(store.exam.date + "T00:00:00");
+  app.innerHTML = `
+    <section class="count">
+      <h1>${esc(store.exam.name)}まで</h1>
+      <div class="days num">${left >= 0 ? left : 0}<small>日</small></div>
+      <div class="meta num">${examDate.getFullYear()}年${examDate.getMonth()+1}月${examDate.getDate()}日<br>
+        <button class="linkbtn" id="edit">試験日を変更</button></div>
+      <form class="editor" id="editor" hidden>
+        <input id="examName" aria-label="試験名" value="${esc(store.exam.name)}">
+        <input id="examDate" type="date" aria-label="試験日" value="${esc(store.exam.date)}">
+        <button class="btn" type="submit">保存</button>
+      </form>
+    </section>
+    <div class="today num">
+      <span><b>${todayN}</b>問 今日解いた</span>
+      <span><b>${streak()}</b>日 連続学習</span>
+    </div>
+    <section class="subjects">
+      ${SUBJECTS.map(s => {
+        const total = s.items.length;
+        const m = s.items.filter(it => isMastered(it.id)).length;
+        const w = s.items.filter(it => isWeak(it.id)).length;
+        return `<div class="subj">
+          <div><h2>${s.name}</h2><div class="desc">${s.desc}・全${total}問</div></div>
+          <div class="actions">
+            <button class="btn red" data-s="${s.id}" data-mode="weak" ${w ? "" : "disabled"} aria-label="${s.name}の苦手を復習">苦手 ${w}</button>
+            <button class="btn" data-s="${s.id}" data-mode="normal">10問</button>
+          </div>
+          <div class="bar"><i class="m" style="width:${m/total*100}%"></i><i class="w" style="width:${w/total*100}%"></i></div>
+          <div class="legend num"><span class="lm">定着 ${m}</span><span class="lw">苦手 ${w}</span><span>未定着 ${total - m - w}</span></div>
+        </div>`;
+      }).join("")}
+    </section>
+    <p class="foot">3回連続で正解すると「定着」。間違えた問題は「苦手」に入り、正解すると外れます。<br>記録はこの端末のブラウザに保存されます。</p>`;
+  app.querySelector("#edit").onclick = () => { const f = app.querySelector("#editor"); f.hidden = !f.hidden; };
+  app.querySelector("#editor").onsubmit = e => {
+    e.preventDefault();
+    const name = app.querySelector("#examName").value.trim() || "試験";
+    const date = app.querySelector("#examDate").value;
+    if (date) { store.exam = { name, date }; save(); }
+    render();
+  };
+  app.querySelectorAll("[data-s]").forEach(b => b.onclick = () => startQuiz(b.dataset.s, b.dataset.mode));
+}
+
+function startQuiz(sid, mode) {
+  const subj = SUBJECTS.find(s => s.id === sid);
+  const qs = pickQuestions(subj, mode).map(it => ({ item: it, choices: choicesFor(subj, it), picked: null }));
+  view = { name: "quiz", subj, mode, qs, i: 0 };
+  render();
+}
+
+function renderQuiz() {
+  const { subj, qs, i, mode } = view;
+  const q = qs[i];
+  const answered = q.picked !== null;
+  const correct = answered && q.picked === q.item.a;
+  app.innerHTML = `
+    <div class="qhead">
+      <span class="label">${subj.name}${mode === "weak" ? "・苦手復習" : ""}</span>
+      <span class="label num">${i + 1} / ${qs.length}</span>
+      <button class="linkbtn" id="quit">やめる</button>
+    </div>
+    <div class="progress"><i style="width:${(i + (answered ? 1 : 0)) / qs.length * 100}%"></i></div>
+    <div class="card">
+      <span class="label">${subj.qLabel}</span>
+      <div class="prompt ${q.item.q.length > 14 ? "long" : ""}">${esc(q.item.q)}</div>
+      ${answered ? `<div class="mark" aria-label="${correct ? "正解" : "不正解"}">${correct ? "〇" : "✕"}</div>` : ""}
+    </div>
+    <div class="choices">
+      ${q.choices.map((c, k) => {
+        let cls = "";
+        if (answered && c === q.item.a) cls = "right";
+        else if (answered && c === q.picked) cls = "wrong";
+        return `<button class="choice ${cls}" data-c="${k}" ${answered ? "disabled" : ""}><span class="k">${k + 1}</span><span>${esc(c)}</span></button>`;
+      }).join("")}
+    </div>
+    ${answered ? `<button class="btn" id="next">${i + 1 < qs.length ? "次へ" : "結果を見る"}</button>
+      <p class="note">${correct ? "" : `正解は「${esc(q.item.a)}」。苦手リストに入りました。`}</p>` : `<p class="note">数字キー 1〜4 でも答えられます。</p>`}`;
+  app.querySelector("#quit").onclick = () => { view = { name: "home" }; render(); };
+  app.querySelectorAll("[data-c]").forEach(b => b.onclick = () => answer(q.choices[+b.dataset.c]));
+  const next = app.querySelector("#next");
+  if (next) { next.onclick = goNext; next.focus(); }
+}
+
+function answer(choice) {
+  const q = view.qs[view.i];
+  if (q.picked !== null) return;
+  q.picked = choice;
+  const ok = choice === q.item.a;
+  const r = rec(q.item.id);
+  store.items[q.item.id] = { n: r.n + 1, s: ok ? r.s + 1 : 0, last: ok };
+  store.days[todayKey()] = (store.days[todayKey()] || 0) + 1;
+  save();
+  render();
+}
+function goNext() {
+  if (view.i + 1 < view.qs.length) { view.i++; render(); }
+  else { view = { ...view, name: "result" }; render(); }
+}
+
+function renderResult() {
+  const { subj, qs, mode } = view;
+  const ok = qs.filter(q => q.picked === q.item.a).length;
+  const wrongLeft = subj.items.filter(it => isWeak(it.id)).length;
+  app.innerHTML = `
+    <div class="qhead"><span class="label">${subj.name}・結果</span></div>
+    <section class="count">
+      <h1>${ok === qs.length ? "全問正解" : ok / qs.length >= .7 ? "よくできました" : "苦手を復習しましょう"}</h1>
+      <div class="score num">${ok}<small> / ${qs.length}</small></div>
+    </section>
+    <div class="list">
+      ${qs.map(q => { const c = q.picked === q.item.a; return `<div class="row">
+        <span class="m">${c ? "〇" : "✕"}</span><span>${esc(q.item.q)}</span>
+        <span class="a">${esc(q.item.a)}${c ? "" : `（あなたの答え：${esc(q.picked)}）`}</span></div>`; }).join("")}
+    </div>
+    <div class="actions">
+      <button class="btn" id="again">もう10問</button>
+      <button class="btn red" id="weak" ${wrongLeft ? "" : "disabled"}>苦手を復習 ${wrongLeft}</button>
+      <button class="btn ghost" id="home">ホーム</button>
+    </div>`;
+  app.querySelector("#again").onclick = () => startQuiz(subj.id, mode === "weak" && wrongLeft ? "weak" : "normal");
+  app.querySelector("#weak").onclick = () => startQuiz(subj.id, "weak");
+  app.querySelector("#home").onclick = () => { view = { name: "home" }; render(); };
+}
+
+document.addEventListener("keydown", e => {
+  if (view.name !== "quiz" || e.target.tagName === "INPUT") return;
+  const q = view.qs[view.i];
+  if (q.picked === null && /^[1-4]$/.test(e.key)) answer(q.choices[+e.key - 1]);
+});
+
+render();
+</script>
