@@ -1,0 +1,441 @@
+<title>動詞の型リーディング</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column; the English sentence is read left to right on a sheet and stops at the verb. */
+:root {
+  --paper: #f6f7f9;
+  --sheet: #ffffff;
+  --ink: #1d2433;
+  --ink-soft: #5d6578;
+  --rule: #dfe3ea;
+  --indigo: #2f4a8a;
+  --indigo-wash: #e8edf7;
+  --redpen: #d43a2f;
+  --redpen-wash: #fbe9e7;
+  --ok: #1f7a4d;
+  --ok-wash: #e4f3ea;
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --en: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12151c; --sheet: #1a1f29; --ink: #e8ebf2; --ink-soft: #9aa2b4; --rule: #2b3240;
+    --indigo: #8fa8e6; --indigo-wash: #222b40; --redpen: #ff7a6b; --redpen-wash: #3a2220; --ok: #5cc795; --ok-wash: #1b3328;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12151c; --sheet: #1a1f29; --ink: #e8ebf2; --ink-soft: #9aa2b4; --rule: #2b3240;
+  --indigo: #8fa8e6; --indigo-wash: #222b40; --redpen: #ff7a6b; --redpen-wash: #3a2220; --ok: #5cc795; --ok-wash: #1b3328;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; padding: 0 16px; }
+.app { max-width: 560px; margin: 0 auto; padding-block: 20px 48px; display: flex; flex-direction: column; gap: 18px; }
+button { font-family: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+h1, h2 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: 26px; }
+h2 { font-size: 18px; }
+p { margin: 0; }
+.label { font-size: 12px; letter-spacing: .08em; color: var(--ink-soft); font-weight: 500; }
+.num { font-variant-numeric: tabular-nums; }
+.lead { color: var(--ink-soft); font-size: 14px; max-width: 34em; }
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+
+/* home */
+.demo { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.demo .en { font-size: 19px; }
+.stats { display: flex; gap: 24px; font-size: 13px; color: var(--ink-soft); flex-wrap: wrap; padding-inline: 4px; }
+.stats b { color: var(--ink); font-size: 18px; margin-right: 2px; }
+.bar { height: 6px; background: var(--indigo-wash); border-radius: 3px; overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .m { background: var(--indigo); }
+.bar .w { background: var(--redpen); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--indigo); background: var(--indigo); color: var(--sheet); border-radius: 4px; padding: 9px 16px; font-weight: 700; font-size: 14px; }
+.btn.ghost { background: transparent; color: var(--indigo); }
+.btn.red { border-color: var(--redpen); color: var(--redpen); background: transparent; }
+.btn:disabled { opacity: .35; cursor: default; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--indigo); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+
+/* pattern notebook */
+.notes details { border-top: 1px solid var(--rule); }
+.notes details:first-child { border-top: 0; }
+.notes summary { padding: 12px 16px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; list-style: none; }
+.notes summary::-webkit-details-marker { display: none; }
+.notes summary .f { font-family: var(--en); font-weight: 600; font-size: 16px; }
+.notes summary .m { font-size: 13px; color: var(--ink-soft); grid-column: 1; }
+.notes summary .acc { grid-row: 1 / 3; grid-column: 2; align-self: center; font-size: 12px; color: var(--ink-soft); }
+.notes .body { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.notes .verbs { font-family: var(--en); font-size: 15px; }
+.notes .ex { font-family: var(--en); color: var(--ink-soft); }
+
+/* sentence */
+.en { font-family: var(--en); line-height: 1.9; overflow-wrap: anywhere; }
+.reader { padding: 22px 18px 18px; min-height: 150px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+.reader .en { font-size: 22px; }
+.w { display: inline; }
+.w.in { animation: fade .16s ease-out; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.v { color: var(--indigo); font-weight: 600; border-bottom: 2px solid var(--indigo); }
+.wait { display: inline-block; margin-left: 6px; color: var(--redpen); font-family: var(--body); font-size: 15px; font-weight: 700; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.chunk { display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: baseline; line-height: 1.5; }
+.chunk .t { padding: 0 3px; border-radius: 3px; }
+.chunk .tag { font-family: var(--body); font-size: 11px; font-weight: 700; letter-spacing: .04em; padding-left: 3px; }
+.chunk.o .t { background: var(--indigo-wash); }
+.chunk.o .tag { color: var(--indigo); }
+.chunk.c .t { background: var(--redpen-wash); }
+.chunk.c .tag { color: var(--redpen); }
+.chunk.vv .t { color: var(--indigo); font-weight: 600; }
+.chunk.vv .tag { color: var(--indigo); }
+.ja { font-size: 14px; color: var(--ink-soft); }
+.mark { position: absolute; right: 14px; top: 6px; font-family: var(--display); font-size: 60px; line-height: 1; color: var(--redpen); pointer-events: none; animation: stamp .18s ease-out; }
+@keyframes stamp { from { transform: scale(1.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.qhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.progress { height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--indigo); transition: width .25s; }
+.ask { font-size: 14px; font-weight: 700; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 420px) { .choices { grid-template-columns: 1fr; } }
+.choice { text-align: left; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.choice:hover:not(:disabled) { border-color: var(--indigo); }
+.choice .k { font-size: 12px; color: var(--ink-soft); flex: none; }
+.choice .f { font-family: var(--en); font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.choice.right { border-color: var(--ok); background: var(--ok-wash); color: var(--ok); }
+.choice.wrong { border-color: var(--redpen); background: var(--redpen-wash); color: var(--redpen); }
+.choice:disabled { cursor: default; }
+.tip { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--indigo); border-radius: 0 6px 6px 0; }
+.tip .rule { font-size: 15px; }
+.tip .rule b { font-family: var(--en); }
+.time { font-size: 13px; color: var(--ink-soft); }
+
+/* result */
+.score { font-family: var(--display); font-size: 48px; font-weight: 800; color: var(--redpen); line-height: 1; }
+.score small { font-size: 20px; color: var(--ink); }
+.summary { padding: 18px 20px; display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap; }
+.summary .sec { font-size: 28px; font-weight: 700; font-family: var(--display); line-height: 1; }
+.summary .sec small { font-size: 14px; }
+.list .row { display: grid; grid-template-columns: 1.5em 1fr; gap: 2px 10px; padding: 10px 14px; border-top: 1px solid var(--rule); font-size: 14px; }
+.list .row:first-child { border-top: 0; }
+.list .mk { font-family: var(--display); color: var(--redpen); font-weight: 800; }
+.list .s { font-family: var(--en); font-size: 15px; }
+.list .a { grid-column: 2; color: var(--ink-soft); font-size: 13px; }
+.foot { font-size: 12px; color: var(--ink-soft); }
+@media (prefers-reduced-motion: reduce) { .w.in, .mark, .wait { animation: none; } .progress i { transition: none; } }
+</style>
+
+<div class="app" id="app"></div>
+
+<script>
+// ---------- 動詞の型 ----------
+// o / c は文中で色分けする2つのかたまりのラベル
+const PATTERNS = {
+  fromDoing:  { f: "O from doing",            o: "O",       c: "from doing",   m: "Oが〜するのを妨げる・やめさせる" },
+  ofRob:      { f: "A of B（奪う・除去）",     o: "A",       c: "of B",         m: "AからBを奪う・取り除く" },
+  ofTell:     { f: "A of B（伝える）",         o: "A",       c: "of B",         m: "AにBを伝える・思い出させる・確信させる" },
+  withB:      { f: "A with B",                o: "A",       c: "with B",       m: "AにBを与える・供給する" },
+  toDoO:      { f: "O to do",                 o: "O",       c: "to do",        m: "Oが〜するよう働きかける・〜させる" },
+  bare:       { f: "O + 原形",                 o: "O",       c: "原形",          m: "Oに〜させる（使役）" },
+  asB:        { f: "A as B",                  o: "A",       c: "as B",         m: "AをBとみなす・表す" },
+  toB:        { f: "A to B",                  o: "A",       c: "to B",         m: "AをBのおかげと考える・Bに捧げる" },
+  thatShould: { f: "that S (should) 原形",     o: "that S",  c: "(should) 原形", m: "Sが〜するよう要求・提案・主張する" },
+  doing:      { f: "doing",                   o: "",        c: "doing",        m: "〜すること（避ける・認める・延期する等）" },
+  toDo:       { f: "to do",                   o: "",        c: "to do",        m: "〜すること（決める・拒む・なんとか〜する等）" },
+  OC:         { f: "O C",                     o: "O",       c: "C",            m: "OをCだと思う・Cの状態にしておく" },
+  OO:         { f: "O O（二重目的語）",         o: "O₁",      c: "O₂",           m: "O₁にO₂を与える・かけさせる・失わせる" },
+  forB:       { f: "A for B",                 o: "A",       c: "for B",        m: "BのことでAを〜する・AをBと間違える" },
+  fromB:      { f: "A from B（区別）",          o: "A",       c: "from B",       m: "AとBを見分ける" },
+  intoB:      { f: "A into B",                o: "A",       c: "into B",       m: "AをBに変える・説得してBさせる" },
+  onB:        { f: "A on B",                  o: "A",       c: "on B",         m: "AをBに課す・基づかせる・Bのせいにする" }
+};
+
+// [原形, 正しい型, その動詞が取れる他の型（誤答の選択肢から外す）, 文, 和訳]
+// 文の記法： |動詞| [1つ目のかたまり] {2つ目のかたまり}
+const RAW = [
+  ["prevent", "fromDoing", "", "The heavy rain |prevented| [us] {from going out}.", "大雨のせいで私たちは外出できなかった。"],
+  ["keep", "fromDoing", "OC doing", "The noise |kept| [me] {from sleeping} all night.", "騒音のせいで一晩中眠れなかった。"],
+  ["discourage", "fromDoing", "", "High prices |discourage| [young people] {from buying houses}.", "価格が高いので若者は家を買う気になれない。"],
+  ["rob", "ofRob", "", "A man |robbed| [her] {of her bag} on the street.", "路上で男が彼女からバッグを奪った。"],
+  ["deprive", "ofRob", "", "The illness |deprived| [him] {of his sight}.", "その病気で彼は視力を失った。"],
+  ["clear", "ofRob", "OC", "Workers |cleared| [the road] {of snow}.", "作業員が道路の雪を取り除いた。"],
+  ["remind", "ofTell", "toDoO thatShould", "This song |reminds| [me] {of my school days}.", "この歌を聞くと学生時代を思い出す。"],
+  ["inform", "ofTell", "", "Please |inform| [us] {of any changes}.", "変更があればお知らせください。"],
+  ["convince", "ofTell", "toDoO", "She |convinced| [me] {of her innocence}.", "彼女は自分が無実だと私に確信させた。"],
+  ["warn", "ofTell", "toDoO", "The doctor |warned| [him] {of the dangers of smoking}.", "医者は彼に喫煙の危険を警告した。"],
+  ["provide", "withB", "", "The school |provides| [every student] {with a laptop}.", "その学校は生徒全員にノートパソコンを支給している。"],
+  ["supply", "withB", "", "The farm |supplies| [the city] {with fresh vegetables}.", "その農場は市に新鮮な野菜を供給している。"],
+  ["equip", "withB", "", "They |equipped| [the car] {with a new engine}.", "彼らはその車に新しいエンジンを搭載した。"],
+  ["enable", "toDoO", "", "The Internet |enables| [us] {to work from home}.", "インターネットのおかげで在宅勤務ができる。"],
+  ["encourage", "toDoO", "", "My teacher |encouraged| [me] {to study abroad}.", "先生は私に留学を勧めてくれた。"],
+  ["force", "toDoO", "intoB", "The storm |forced| [the plane] {to land} early.", "嵐のため飛行機は予定より早く着陸せざるを得なかった。"],
+  ["cause", "toDoO", "OO", "The cold weather |caused| [the pipes] {to freeze}.", "寒さで水道管が凍った。"],
+  ["persuade", "toDoO", "intoB ofTell", "I |persuaded| [my father] {to buy a new car}.", "私は父を説得して新車を買わせた。"],
+  ["allow", "toDoO", "OO", "My parents |allowed| [me] {to go to the concert}.", "両親は私がコンサートに行くのを許してくれた。"],
+  ["make", "bare", "OC OO intoB", "The movie |made| [me] {cry}.", "その映画を見て私は泣いた。"],
+  ["let", "bare", "", "|Let| [me] {introduce myself}.", "自己紹介させてください。"],
+  ["have", "bare", "OC", "I |had| [my brother] {fix my bike}.", "私は弟に自転車を直してもらった。"],
+  ["regard", "asB", "", "Many people |regard| [him] {as a genius}.", "多くの人が彼を天才だとみなしている。"],
+  ["see", "asB", "OC bare", "We |see| [this problem] {as a chance to change}.", "私たちはこの問題を変わる好機ととらえている。"],
+  ["describe", "asB", "", "Critics |described| [the book] {as a masterpiece}.", "批評家たちはその本を傑作と評した。"],
+  ["attribute", "toB", "", "He |attributed| [his success] {to hard work}.", "彼は自分の成功を努力のおかげだと考えた。"],
+  ["owe", "toB", "OO", "I |owe| [my life] {to that doctor}.", "私が生きているのはあの医者のおかげだ。"],
+  ["devote", "toB", "", "She |devoted| [her life] {to helping the poor}.", "彼女は貧しい人々を助けることに生涯を捧げた。"],
+  ["suggest", "thatShould", "doing", "The doctor |suggested| [that he] {stop drinking}.", "医者は彼に酒をやめるよう提案した。"],
+  ["insist", "thatShould", "onB", "She |insisted| [that the meeting] {be postponed}.", "彼女は会議を延期すべきだと主張した。"],
+  ["avoid", "doing", "", "You should |avoid| {eating too much sugar}.", "砂糖のとりすぎは避けるべきだ。"],
+  ["mind", "doing", "", "Would you |mind| {opening the window}?", "窓を開けていただけませんか。"],
+  ["deny", "doing", "OO thatShould", "He |denied| {stealing the money}.", "彼はお金を盗んだことを否定した。"],
+  ["postpone", "doing", "", "They |postponed| {making a final decision}.", "彼らは最終決定を先送りにした。"],
+  ["refuse", "toDo", "OO", "He |refused| {to answer the question}.", "彼はその質問に答えるのを拒んだ。"],
+  ["manage", "toDo", "", "She |managed| {to finish the report} on time.", "彼女はなんとか報告書を期限内に仕上げた。"],
+  ["afford", "toDo", "OO", "We can't |afford| {to buy a new house}.", "私たちには新しい家を買う余裕はない。"],
+  ["pretend", "toDo", "thatShould", "He |pretended| {to be asleep}.", "彼は寝たふりをした。"],
+  ["find", "OC", "OO", "I |found| [the book] {interesting}.", "その本は読んでみるとおもしろかった。"],
+  ["leave", "OC", "OO", "Don't |leave| [the door] {open}.", "ドアを開けっぱなしにしないで。"],
+  ["consider", "OC", "doing asB", "They |consider| [him] {the best player on the team}.", "彼らは彼をチームで最高の選手だと考えている。"],
+  ["cost", "OO", "", "That mistake |cost| [him] {his job}.", "そのミスで彼は職を失った。"],
+  ["save", "OO", "fromDoing", "This machine |saves| [us] {a lot of time}.", "この機械のおかげで大幅に時間が節約できる。"],
+  ["take", "OO", "toB", "The trip |took| [us] {three days}.", "その旅行には3日かかった。"],
+  ["blame", "forB", "onB", "She |blamed| [me] {for the accident}.", "彼女は事故を私のせいにした。"],
+  ["thank", "forB", "", "I |thanked| [him] {for his help}.", "私は彼に手伝ってくれたお礼を言った。"],
+  ["mistake", "forB", "", "People often |mistake| [me] {for my sister}.", "私はよく姉と間違えられる。"],
+  ["distinguish", "fromB", "", "Can you |distinguish| [real news] {from fake news}?", "本物のニュースと偽ニュースを見分けられますか。"],
+  ["tell", "fromB", "OO toDoO ofTell", "It is hard to |tell| [wheat] {from barley}.", "小麦と大麦を見分けるのは難しい。"],
+  ["turn", "intoB", "OC", "The witch |turned| [the prince] {into a frog}.", "魔女は王子をカエルに変えた。"],
+  ["translate", "intoB", "", "She |translated| [the novel] {into Japanese}.", "彼女はその小説を日本語に翻訳した。"],
+  ["talk", "intoB", "", "He |talked| [me] {into joining the club}.", "彼に説得されて私はそのクラブに入った。"],
+  ["impose", "onB", "", "The government |imposed| [a new tax] {on cigarettes}.", "政府はたばこに新しい税を課した。"],
+  ["base", "onB", "", "She |based| [her novel] {on a true story}.", "彼女は実話をもとに小説を書いた。"],
+  ["blame", "onB", "forB", "Don't |blame| [your mistakes] {on others}.", "自分のミスを他人のせいにするな。"]
+];
+const RE = /^(.*?)\|(.+?)\|\s*(?:\[(.+?)\])?\s*(?:\{(.+?)\})?(.*)$/;
+const ITEMS = RAW.map(([base, p, also, s, ja], i) => {
+  const [, pre, v, o, c, post] = s.match(RE);
+  return { id: "v" + i, base, p, also: also ? also.split(" ") : [], pre: pre.trim(), v, o: o || "", c: c || "", post, ja };
+});
+
+// ---------- 保存 ----------
+const KEY = "verb-pattern-v1";
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.items) return d; } catch (e) {}
+  return { items: {}, times: [] };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+let store = load();
+const rec = id => store.items[id] || { n: 0, s: 0, last: null };
+const isMastered = id => rec(id).s >= 3;
+const isWeak = id => rec(id).last === false;
+
+// ---------- 出題 ----------
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function pick(mode) {
+  if (mode === "weak") return shuffle(ITEMS.filter(it => isWeak(it.id))).slice(0, 10);
+  const rank = it => isWeak(it.id) ? 0 : rec(it.id).n === 0 ? 1 : !isMastered(it.id) ? 2 : 3;
+  return shuffle(ITEMS).sort((a, b) => rank(a) - rank(b)).slice(0, 10);
+}
+function choicesFor(it) {
+  const banned = new Set([it.p, ...it.also]);
+  const others = shuffle(Object.keys(PATTERNS).filter(k => !banned.has(k))).slice(0, 3);
+  return shuffle([it.p, ...others]);
+}
+
+// ---------- 画面 ----------
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+let view = { name: "home" };
+let timer = null;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function go(v) { clearInterval(timer); view = v; render(); window.scrollTo(0, 0); }
+function render() {
+  if (view.name === "home") renderHome();
+  else if (view.name === "quiz") renderQuiz();
+  else renderResult();
+}
+
+// 答え合わせ後の文：V・1つ目・2つ目のかたまりにラベルを付ける
+function analyzed(it) {
+  const P = PATTERNS[it.p];
+  const chunk = (cls, t, tag) => `<span class="chunk ${cls}"><span class="t">${esc(t)}</span><span class="tag">${esc(tag)}</span></span>`;
+  return `${esc(it.pre)} ${chunk("vv", it.v, "V")} ${it.o ? chunk("o", it.o, P.o) + " " : ""}${chunk("c", it.c, P.c)}${esc(it.post)}`;
+}
+
+function renderHome() {
+  const m = ITEMS.filter(it => isMastered(it.id)).length;
+  const w = ITEMS.filter(it => isWeak(it.id)).length;
+  const t = store.times.slice(-30);
+  const avg = t.length ? (t.reduce((a, b) => a + b, 0) / t.length / 1000).toFixed(1) : "–";
+  const sample = ITEMS[0];
+  const groups = Object.keys(PATTERNS).map(k => {
+    const its = ITEMS.filter(it => it.p === k);
+    const done = its.filter(it => isMastered(it.id)).length;
+    return `<details>
+      <summary><span class="f">V ${esc(PATTERNS[k].f)}</span><span class="m">${esc(PATTERNS[k].m)}</span><span class="acc num">定着 ${done}/${its.length}</span></summary>
+      <div class="body">
+        <div class="verbs">${[...new Set(its.map(it => it.base))].join(", ")}</div>
+        ${its.map(it => `<div><div class="ex">${esc(it.pre)} <b>${esc(it.v)}</b> ${esc(it.o)} ${esc(it.c)}${esc(it.post)}</div><div class="ja">${esc(it.ja)}</div></div>`).join("")}
+      </div></details>`;
+  }).join("");
+  app.innerHTML = `
+    <header style="display:flex;flex-direction:column;gap:6px">
+      <h1>動詞の型リーディング</h1>
+      <p class="lead">英文を左から読んでいき、動詞で止まります。その動詞の後ろにどんな形が来るかを予測してから続きを読む練習です。動詞を見た瞬間に後ろの形が浮かぶようになると、英文を前から正確に読めるようになります。</p>
+    </header>
+    <section class="sheet demo">
+      <span class="label">例</span>
+      <div class="en">${esc(sample.pre)} <span class="v">${esc(sample.v)}</span> <span class="wait">→ ?</span></div>
+      <div class="en">${analyzed(sample)}</div>
+      <div class="ja">prevent を見たら「O from doing（Oが〜するのを妨げる）」が来ると予測して読む。</div>
+    </section>
+    <div class="stats num">
+      <span><b>${m}</b>/${ITEMS.length} 定着</span>
+      <span><b>${w}</b> 苦手</span>
+      <span><b>${avg}</b>秒 平均予測時間</span>
+    </div>
+    <div class="bar"><i class="m" style="width:${m / ITEMS.length * 100}%"></i><i class="w" style="width:${w / ITEMS.length * 100}%"></i></div>
+    <div class="actions">
+      <button class="btn" id="start">10問トレーニング</button>
+      <button class="btn red" id="weak" ${w ? "" : "disabled"}>苦手を復習 ${w}</button>
+    </div>
+    <section style="display:flex;flex-direction:column;gap:10px">
+      <h2>型ノート</h2>
+      <p class="lead">${Object.keys(PATTERNS).length}の型と、出題する${ITEMS.length}文の一覧です。タップすると動詞と例文が開きます。</p>
+      <div class="sheet notes">${groups}</div>
+    </section>
+    <p class="foot">3回連続で正解すると「定着」。間違えた文は「苦手」に入り、正解すると外れます。記録はこの端末のブラウザに保存されます。</p>`;
+  app.querySelector("#start").onclick = () => startQuiz("normal");
+  app.querySelector("#weak").onclick = () => startQuiz("weak");
+}
+
+function startQuiz(mode) {
+  const qs = pick(mode).map(it => ({ it, choices: choicesFor(it), picked: null, ms: 0 }));
+  go({ name: "quiz", mode, qs, i: 0, shown: 0 });
+}
+
+function renderQuiz() {
+  const { qs, i, mode } = view;
+  const q = qs[i], it = q.it;
+  const words = it.pre ? it.pre.split(/\s+/) : [];
+  const answered = q.picked !== null;
+  const ok = answered && q.picked === it.p;
+  const P = PATTERNS[it.p];
+  app.innerHTML = `
+    <div class="qhead">
+      <span class="label">${mode === "weak" ? "苦手復習" : "トレーニング"}</span>
+      <span class="label num">${i + 1} / ${qs.length}</span>
+      <button class="linkbtn" id="quit">やめる</button>
+    </div>
+    <div class="progress"><i style="width:${(i + (answered ? 1 : 0)) / qs.length * 100}%"></i></div>
+    <div class="sheet reader">
+      <div class="en" id="sent"></div>
+      ${answered ? `<div class="ja">${esc(it.ja)}</div><div class="mark">${ok ? "〇" : "✕"}</div>` : ""}
+    </div>
+    <div id="below"></div>
+    ${answered ? "" : `<p class="foot">数字キー 1〜4 でも答えられます。</p>`}`;
+  app.querySelector("#quit").onclick = () => go({ name: "home" });
+  const sent = app.querySelector("#sent");
+
+  if (answered) { sent.innerHTML = analyzed(it); renderBelow(); return; }
+
+  // 単語を1つずつ表示して、動詞で止める
+  let n = reduced ? words.length : 0;
+  const draw = () => {
+    sent.innerHTML = words.slice(0, n).map((w, k) => `<span class="w ${k === n - 1 ? "in" : ""}">${esc(w)}</span> `).join("");
+  };
+  const atVerb = () => {
+    sent.innerHTML = (words.length ? esc(words.join(" ")) + " " : "") + `<span class="v w in">${esc(it.v)}</span><span class="wait">→ ?</span>`;
+    view.t0 = performance.now();
+    renderBelow();
+  };
+  draw();
+  if (n >= words.length) atVerb();
+  else timer = setInterval(() => { n++; draw(); if (n >= words.length) { clearInterval(timer); setTimeout(atVerb, 220); } }, 230);
+
+  function renderBelow() {
+    const below = app.querySelector("#below");
+    below.style.cssText = "display:flex;flex-direction:column;gap:12px";
+    below.innerHTML = `
+      ${answered ? "" : `<p class="ask"><span style="font-family:var(--en)">${esc(it.v)}</span> の後ろに来る形は？</p>`}
+      <div class="choices">
+        ${q.choices.map((k, j) => {
+          let cls = "";
+          if (answered && k === it.p) cls = "right";
+          else if (answered && k === q.picked) cls = "wrong";
+          return `<button class="choice ${cls}" data-k="${k}" ${answered ? "disabled" : ""}><span class="k">${j + 1}</span><span class="f">${esc(PATTERNS[k].f)}</span></button>`;
+        }).join("")}
+      </div>
+      ${answered ? `
+        <div class="sheet tip">
+          <span class="label">予測のルール</span>
+          <p class="rule"><b>${esc(it.base)}</b> を見たら → <b>${esc(P.f)}</b> を待つ</p>
+          <p class="ja">${esc(P.m)}</p>
+          ${it.also.length ? `<p class="ja">${esc(it.base)} は ${it.also.map(k => esc(PATTERNS[k].f)).join("、")} の形も取ります。</p>` : ""}
+        </div>
+        <p class="time num">予測にかかった時間 ${(q.ms / 1000).toFixed(1)}秒${q.ms < 3000 && ok ? "（スムーズ）" : ""}</p>
+        <button class="btn" id="next">${i + 1 < qs.length ? "次の文へ" : "結果を見る"}</button>` : ""}`;
+    below.querySelectorAll("[data-k]").forEach(b => b.onclick = () => answer(b.dataset.k));
+    const next = below.querySelector("#next");
+    if (next) { next.onclick = goNext; next.focus({ preventScroll: true }); }
+  }
+}
+
+function answer(k) {
+  const q = view.qs[view.i];
+  if (q.picked !== null || view.t0 == null) return;
+  q.picked = k;
+  q.ms = Math.round(performance.now() - view.t0);
+  view.t0 = null;
+  const ok = k === q.it.p;
+  const r = rec(q.it.id);
+  store.items[q.it.id] = { n: r.n + 1, s: ok ? r.s + 1 : 0, last: ok };
+  if (ok) store.times = [...store.times, q.ms].slice(-100);
+  save();
+  render();
+}
+function goNext() {
+  if (view.i + 1 < view.qs.length) go({ ...view, i: view.i + 1 });
+  else go({ ...view, name: "result" });
+}
+
+function renderResult() {
+  const { qs, mode } = view;
+  const ok = qs.filter(q => q.picked === q.it.p);
+  const avg = ok.length ? (ok.reduce((a, q) => a + q.ms, 0) / ok.length / 1000).toFixed(1) : "–";
+  const w = ITEMS.filter(it => isWeak(it.id)).length;
+  app.innerHTML = `
+    <div class="qhead"><span class="label">結果</span></div>
+    <section class="sheet summary">
+      <div><span class="label">正解</span><div class="score num">${ok.length}<small> / ${qs.length}</small></div></div>
+      <div><span class="label">正解したときの平均予測時間</span><div class="sec num">${avg}<small>秒</small></div></div>
+    </section>
+    <p class="lead">目標は、動詞を見て3秒以内に後ろの形が浮かぶことです。</p>
+    <div class="sheet list">
+      ${qs.map(q => { const c = q.picked === q.it.p; return `<div class="row">
+        <span class="mk">${c ? "〇" : "✕"}</span>
+        <span class="s">${esc(q.it.pre)} <b>${esc(q.it.v)}</b> ${esc(q.it.o)} ${esc(q.it.c)}${esc(q.it.post)}</span>
+        <span class="a">${esc(q.it.base)} → ${esc(PATTERNS[q.it.p].f)}${c ? "" : `（あなたの答え：${esc(PATTERNS[q.picked].f)}）`}</span>
+      </div>`; }).join("")}
+    </div>
+    <div class="actions">
+      <button class="btn" id="again">もう10問</button>
+      <button class="btn red" id="weak" ${w ? "" : "disabled"}>苦手を復習 ${w}</button>
+      <button class="btn ghost" id="home">ホーム</button>
+    </div>`;
+  app.querySelector("#again").onclick = () => startQuiz(mode === "weak" && w ? "weak" : "normal");
+  app.querySelector("#weak").onclick = () => startQuiz("weak");
+  app.querySelector("#home").onclick = () => go({ name: "home" });
+}
+
+document.addEventListener("keydown", e => {
+  if (view.name !== "quiz") return;
+  const q = view.qs[view.i];
+  if (q.picked === null && /^[1-4]$/.test(e.key)) answer(q.choices[+e.key - 1]);
+});
+
+render();
+</script>
